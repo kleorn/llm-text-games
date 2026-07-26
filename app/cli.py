@@ -9,6 +9,7 @@ from app.config import Settings
 from app.constants import INTRODUCTION, VICTORY_ART
 from app.games.registry import default_games, select_game
 from app.llm import LLMClient, LLMResponseError
+from app.logging_config import configure_logging
 
 
 def _numbered_prompt(console: Console, prompt: str, maximum: int) -> int | None:
@@ -29,6 +30,7 @@ def _numbered_prompt(console: Console, prompt: str, maximum: int) -> int | None:
 
 def run(settings: Settings, llm_factory: Callable[..., Any] = LLMClient) -> int:
     console = Console()
+    logger = configure_logging()
     definitions = default_games()
     if len(definitions) > 1:
         console.print("Выберите игру:")
@@ -56,6 +58,7 @@ def run(settings: Settings, llm_factory: Callable[..., Any] = LLMClient) -> int:
                 return 0
             if not message:
                 continue
+            logger.info("Player turn submitted; message_length=%d", len(message))
             result = game.handle_player_message(message)
             if result.text:
                 console.print()
@@ -66,5 +69,6 @@ def run(settings: Settings, llm_factory: Callable[..., Any] = LLMClient) -> int:
                 console.print(VICTORY_ART, style="green")
                 return 0
     except (LLMResponseError, OpenAIError, ValueError, OSError, RuntimeError) as exc:
+        logger.exception("Game failed")
         console.print(f"Ошибка игры: {exc}", style="bold red")
         return 1
