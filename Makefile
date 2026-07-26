@@ -1,17 +1,22 @@
 SERVICE_PORT ?= 8000
+IMAGE ?= llm-text-games
+CONTAINER ?= llm-text-games
 
 docker-build:
-	docker build -t llm-text-games .
+	docker build -t $(IMAGE) .
 
 docker-run:
-	docker run --rm -it --name llm-text-games --env-file .env -e SERVICE_PORT=$(SERVICE_PORT) llm-text-games
+	docker run -d --name $(CONTAINER) --restart unless-stopped --network host --env-file .env -e SERVICE_PORT=$(SERVICE_PORT) $(IMAGE)
 
 docker-restart: docker-stop docker-run
 
 docker-stop:
-	-docker stop llm-text-games
+	-docker stop $(CONTAINER)
 
 docker-rm:
-	-docker rm llm-text-games
+	-docker rm -f $(CONTAINER)
 
 docker-update: docker-stop docker-rm docker-build docker-run
+
+web-run:
+	uv run python -m app.web_server --host 0.0.0.0 --port $(SERVICE_PORT)
