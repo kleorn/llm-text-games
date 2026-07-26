@@ -7,7 +7,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 RUN useradd --create-home --uid 10001 appuser \
     && mkdir -p /app/logs \
-    && chown appuser:appuser /app
+    && chown -R appuser:appuser /app
 
 COPY --from=ghcr.io/astral-sh/uv:0.8.14 /uv /uvx /bin/
 COPY --chown=appuser:appuser pyproject.toml uv.lock README.md .env.example ./
