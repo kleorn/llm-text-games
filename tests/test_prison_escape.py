@@ -17,6 +17,11 @@ def test_difficulty_changes_guard_prompt():
     assert PrisonEscapeGame(1, FakeLLM()).history[0]["content"] != PrisonEscapeGame(10, FakeLLM()).history[0]["content"]
 
 
+def test_guard_prompt_requests_brief_replies():
+    prompt = PrisonEscapeGame(5, FakeLLM()).history[0]["content"]
+    assert "1–3" in prompt
+
+
 def test_message_history_and_release():
     llm = FakeLLM(ToolResult("Выпущен!", released=True))
     game = PrisonEscapeGame(5, llm)

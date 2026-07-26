@@ -3,6 +3,7 @@ from typing import Any
 
 from rich.console import Console
 from rich.markdown import Markdown
+from openai import OpenAIError
 
 from app.config import Settings
 from app.constants import VICTORY_ART
@@ -61,6 +62,6 @@ def run(settings: Settings, llm_factory: Callable[..., Any] = LLMClient) -> int:
                 console.print("\n[bold green]Поздравляем! Вы на свободе![/bold green]")
                 console.print(VICTORY_ART, style="green")
                 return 0
-    except (LLMResponseError, ValueError, OSError, RuntimeError) as exc:
+    except (LLMResponseError, OpenAIError, ValueError, OSError, RuntimeError) as exc:
         console.print(f"Ошибка игры: {exc}", style="bold red")
         return 1

@@ -16,7 +16,9 @@ def test_cli_returns_success_on_release(monkeypatch, capsys):
     monkeypatch.setattr("builtins.input", lambda _prompt: next(iter(["1", "Я невиновен"])))
     settings = Settings(OPENAI_API_KEY="key", OPENAI_BASE_URL="https://example.test/v1", OPENAI_MODEL="model")
     assert run(settings, FakeLLM) == 0
-    assert "Поздравляем" in capsys.readouterr().out
+    output = capsys.readouterr().out
+    assert "Стражник:" in output
+    assert "Поздравляем" in output
 
 
 class ProviderError(OpenAIError):
@@ -24,7 +26,8 @@ class ProviderError(OpenAIError):
 
 
 def test_cli_hides_provider_error(monkeypatch, capsys):
-    monkeypatch.setattr("builtins.input", iter(["1", "Попытка"]).__next__)
+    values = iter(["1", "Попытка"])
+    monkeypatch.setattr("builtins.input", lambda _prompt: next(values))
 
     class FailingLLM:
         def __init__(self, *_args):
