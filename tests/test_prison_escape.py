@@ -22,6 +22,12 @@ def test_guard_prompt_requests_brief_replies():
     assert "1–3" in prompt
 
 
+def test_game_context_contains_scene_introduction():
+    prompt = PrisonEscapeGame(5, FakeLLM()).history[0]["content"]
+    assert "Ты просыпаешься" in prompt
+    assert "Стражник" in prompt
+
+
 def test_message_history_and_release():
     llm = FakeLLM(ToolResult("Выпущен!", released=True))
     game = PrisonEscapeGame(5, llm)

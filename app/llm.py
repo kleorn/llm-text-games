@@ -24,8 +24,11 @@ class LLMClient:
     def respond(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> ToolResult:
         response = self._client.chat.completions.create(model=self._model, messages=messages, tools=tools)
         try:
-            message = response.choices[0].message
-        except (IndexError, AttributeError) as exc:
+            choices = response.choices
+            if not choices or choices[0].message is None:
+                raise LLMResponseError("LLM returned no assistant message")
+            message = choices[0].message
+        except (IndexError, AttributeError, TypeError) as exc:
             raise LLMResponseError("LLM returned no assistant message") from exc
         released = False
         for call in message.tool_calls or []:

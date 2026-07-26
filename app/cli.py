@@ -6,7 +6,7 @@ from rich.markdown import Markdown
 from openai import OpenAIError
 
 from app.config import Settings
-from app.constants import VICTORY_ART
+from app.constants import INTRODUCTION, VICTORY_ART
 from app.games.registry import default_games, select_game
 from app.llm import LLMClient, LLMResponseError
 
@@ -45,6 +45,7 @@ def run(settings: Settings, llm_factory: Callable[..., Any] = LLMClient) -> int:
     if difficulty is None:
         return 0
     try:
+        console.print(f"\n[italic]{INTRODUCTION}[/italic]\n")
         llm = llm_factory(settings.openai_api_key, settings.openai_base_url, settings.openai_model)
         game = definition.factory(difficulty, llm)
         console.print("\nНачинайте разговор со стражником. Для выхода нажмите Ctrl-D.\n", style="bold")
