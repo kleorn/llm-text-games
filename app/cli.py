@@ -57,7 +57,9 @@ def run(settings: Settings, llm_factory: Callable[..., Any] = LLMClient) -> int:
                 continue
             result = game.handle_player_message(message)
             if result.text:
-                console.print(Markdown(result.text))
+                console.print()
+                console.print(Markdown(f"**Стражник:** {result.text}"))
+                console.print()
             if result.released:
                 console.print("\n[bold green]Поздравляем! Вы на свободе![/bold green]")
                 console.print(VICTORY_ART, style="green")
