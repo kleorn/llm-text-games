@@ -5,16 +5,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     SERVICE_PORT=8000
 
 WORKDIR /app
-COPY --from=ghcr.io/astral-sh/uv:0.8.14 /uv /uvx /bin/
-COPY pyproject.toml uv.lock README.md .env.example ./
-COPY app ./app
-COPY main.py ./main.py
-RUN uv sync --frozen --no-dev
-
 RUN useradd --create-home --uid 10001 appuser \
     && mkdir -p /app/logs \
-    && chown -R appuser:appuser /app
+    && chown appuser:appuser /app
+
+COPY --from=ghcr.io/astral-sh/uv:0.8.14 /uv /uvx /bin/
+COPY --chown=appuser:appuser pyproject.toml uv.lock README.md .env.example ./
+COPY --chown=appuser:appuser app ./app
+COPY --chown=appuser:appuser main.py ./main.py
 USER appuser
+RUN uv sync --frozen --no-dev
 
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
