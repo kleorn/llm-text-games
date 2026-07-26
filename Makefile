@@ -6,7 +6,7 @@ docker-build:
 	docker build -t $(IMAGE) .
 
 docker-run:
-	docker run -d --name $(CONTAINER) --restart unless-stopped --network host --env-file .env -e SERVICE_PORT=$(SERVICE_PORT) $(IMAGE)
+	docker run -d --name $(CONTAINER) --restart unless-stopped -p $(SERVICE_PORT):$(SERVICE_PORT) --env-file .env -e SERVICE_PORT=$(SERVICE_PORT) $(IMAGE)
 
 docker-restart: docker-stop docker-run
 
