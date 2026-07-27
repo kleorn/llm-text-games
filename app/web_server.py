@@ -1,10 +1,13 @@
 import argparse
 import os
 from collections.abc import Mapping
+from pathlib import Path
 from typing import Any
 
 import aiohttp_jinja2
 from aiohttp import web
+import jinja2
+import textual_serve
 from textual_serve.server import Server, to_int
 
 
@@ -26,6 +29,27 @@ def websocket_url_for_request(request: Any, path: str) -> str:
     return f"{scheme}{public_url[public_url.index(':'):]}{path}"
 
 
+def patch_textual_js(source: str, *, mobile: bool) -> str:
+    """Add a short splash timeout and avoid WebGL-only renderers on mobile."""
+    splash_marker = "s||t.connect()}"
+    if splash_marker not in source:
+        raise RuntimeError("Unsupported textual-serve JavaScript bundle")
+    source = source.replace(
+        splash_marker,
+        "s||t.connect(),setTimeout((()=>document.body.classList.add(\"-first-byte\")),1500)}",
+        1,
+    )
+    if mobile:
+        addons = (
+            "this.webglAddon=new p.WebglAddon,this.terminal.loadAddon(this.webglAddon),"
+            "this.canvasAddon=new m.CanvasAddon,this.terminal.loadAddon(this.canvasAddon),"
+        )
+        if addons not in source:
+            raise RuntimeError("Unsupported textual-serve mobile renderer bundle")
+        source = source.replace(addons, "", 1)
+    return source
+
+
 class SameOriginServer(Server):
     """Textual server that advertises the origin the browser actually used."""
 
@@ -44,6 +68,33 @@ class SameOriginServer(Server):
             "config": {"static": {"url": route_url("static", filename="/").rstrip("/") + "/"}},
             "application": {"name": self.title},
         }
+
+    async def handle_textual_js(self, request: web.Request) -> web.Response:
+        bundle = Path(textual_serve.__file__).parent / "static/js/textual.js"
+        source = bundle.read_text(encoding="utf-8")
+        user_agent = request.headers.get("User-Agent", "").lower()
+        mobile = any(token in user_agent for token in ("android", "mobile", "iphone", "ipad"))
+        return web.Response(
+            text=patch_textual_js(source, mobile=mobile),
+            content_type="application/javascript",
+            headers={"Cache-Control": "no-store"},
+        )
+
+    async def _make_app(self) -> web.Application:
+        app = web.Application()
+        aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(self.templates_path))
+        app.add_routes(
+            [
+                web.get("/", self.handle_index, name="index"),
+                web.get("/ws", self.handle_websocket, name="websocket"),
+                web.get("/download/{key}", self.handle_download, name="download"),
+                web.get("/static/js/textual.js", self.handle_textual_js),
+                web.static("/static", self.statics_path, show_index=True, name="static"),
+            ]
+        )
+        app.on_startup.append(self.on_startup)
+        app.on_shutdown.append(self.on_shutdown)
+        return app
 
 
 def main() -> None:
